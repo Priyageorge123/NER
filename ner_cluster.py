@@ -5,15 +5,11 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification, Trainin
 import torch
 from seqeval.metrics import classification_report as seqeval_classification_report
 import wandb
-import logging
 from transformers.integrations import WandbCallback
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Ensure WandB login
-wandb.login()
+keyFile = open('wandb.key', 'r')
+WANDB_API_KEY = keyFile.readline().rstrip()
+wandb.login(key=WANDB_API_KEY)
 
 # URLs to the IOB datasets
 train_url = 'https://raw.githubusercontent.com/Erechtheus/mutationCorpora/master/corpora/IOB/SETH-train.iob'
