@@ -1,3 +1,5 @@
+import os
+import logging
 import requests
 import pandas as pd
 from datasets import Dataset
@@ -7,6 +9,14 @@ from seqeval.metrics import classification_report as seqeval_classification_repo
 import wandb
 from transformers.integrations import WandbCallback
 
+# Set environment variable to disable parallelism in tokenizers
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Ensure WandB login
 keyFile = open('wandb.key', 'r')
 WANDB_API_KEY = keyFile.readline().rstrip()
 wandb.login(key=WANDB_API_KEY)
