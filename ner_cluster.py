@@ -162,6 +162,7 @@ def train():
 
         # Evaluate the model
         trainer.evaluate()
+        wandb.log({"eval_loss": eval_results["eval_loss"]})
 
         # Function to convert predictions to labels
         def align_predictions(predictions, label_ids):
@@ -216,7 +217,7 @@ sweep_config = {
 }
 
 # Initialize the sweep
-sweep_id = wandb.sweep(sweep_config, project="ner-sweep6")
+sweep_id = wandb.sweep(sweep_config, project="ner-sweep7")
 
 # Run the sweep
 wandb.agent(sweep_id, function=train, count=3)
