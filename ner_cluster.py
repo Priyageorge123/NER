@@ -185,7 +185,11 @@ def train():
         report = seqeval_classification_report(out_label_list, preds_list)
         logger.info(report)
         wandb.log({"classification_report": report})
-
+        # Log the metrics to W&B
+        wandb.log({
+            "final_learning_rate": config.learning_rate,
+            "model_checkpoint": config.model_checkpoint,
+        })
     except Exception as e:
         logger.error(f"Error during training or evaluation: {e}")
         wandb.alert(
@@ -207,8 +211,8 @@ sweep_config = {
     'parameters': {
         'learning_rate': {
             'distribution': 'uniform',
-            'min': 1e-5,
-            'max': 5e-5
+            'min': 0.00001,
+            'max': 0.01
         },
         'model_checkpoint': {
             'values': ["bert-base-cased", "bert-large-cased", "roberta-base", "roberta-large"]
@@ -217,7 +221,7 @@ sweep_config = {
 }
 
 # Initialize the sweep
-sweep_id = wandb.sweep(sweep_config, project="ner-sweep")
+sweep_id = wandb.sweep(sweep_config, project="ner-sweep5")
 
 # Run the sweep
 wandb.agent(sweep_id, function=train, count=3)
