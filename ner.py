@@ -6,7 +6,7 @@ from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForTokenClassification, TrainingArguments, Trainer, DataCollatorForTokenClassification
 import torch
 from seqeval.metrics import classification_report as seqeval_classification_report
-from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
+from seqeval.metrics import precision_score, recall_score, f1_score
 import wandb
 from transformers.integrations import WandbCallback
 
@@ -162,7 +162,7 @@ def train():
         trainer.train()
 
         # Evaluate the model
-        trainer.evaluate()
+        metrics = trainer.evaluate()
 
         # Function to convert predictions to labels
         def align_predictions(predictions, label_ids):
@@ -184,24 +184,22 @@ def train():
         test_predictions = trainer.predict(tokenized_test_dataset)
         preds_list, out_label_list = align_predictions(test_predictions.predictions, test_predictions.label_ids)
         
-        # Compute precision, recall, and F1 score
-        precision, recall, f1_score, _ = precision_recall_fscore_support(out_label_list, preds_list, average='macro')
+        # Calculate additional metrics
+        precision = precision_score(out_label_list, preds_list)
+        recall = recall_score(out_label_list, preds_list)
+        f1 = f1_score(out_label_list, preds_list)
+        report = seqeval_classification_report(out_label_list, preds_list)
         
-        # Generate classification report
-        clf_report = seqeval_classification_report(out_label_list, preds_list, output_dict=True)
-
-        # Log everything to W&B
+        # Log metrics to W&B
         wandb.log({
-            "eval_loss": test_predictions.metrics["eval_loss"],
+            "classification_report": report,
+            "eval_loss": metrics["eval_loss"],
             "precision": precision,
             "recall": recall,
-            "f1_score": f1_score,
-            "classification_report": clf_report
+            "f1_score": f1,
+            "final_learning_rate": trainer.args.learning_rate,
+            "model_checkpoint": config.model_checkpoint
         })
-
-        # Log confusion matrix if needed
-        cm = confusion_matrix(out_label_list, preds_list)
-        wandb.log({"confusion_matrix": wandb.plot.confusion_matrix(probs=None, y_true=out_label_list, preds=preds_list)})
 
     except Exception as e:
         logger.error(f"Error during training or evaluation: {e}")
@@ -234,7 +232,7 @@ sweep_config = {
 }
 
 # Initialize the sweep
-sweep_id = wandb.sweep(sweep_config, project="ner-sweep")
+sweep_id = wandb.sweep(sweep_config, project="ner-sweep1")
 
 # Run the sweep
-wandb.agent(sweep_id, function=train, count=10)
+wandb.agent(sweep_id, function=train, count=3)
