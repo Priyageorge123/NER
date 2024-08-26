@@ -5,7 +5,7 @@ import pandas as pd
 from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForTokenClassification, TrainingArguments, Trainer, DataCollatorForTokenClassification
 import torch
-from seqeval.metrics import classification_report as seqeval_classification_report
+from seqeval.metrics import classification_report as seqeval_classification_report, precision_score, recall_score, f1_score
 import wandb
 from transformers.integrations import WandbCallback
 
@@ -185,11 +185,16 @@ def train():
         preds_list, out_label_list = align_predictions(test_predictions.predictions, test_predictions.label_ids)
         
         # Compute the metrics
-        report = seqeval_classification_report(out_label_list, preds_list, output_dict=True)
-        precision = report['weighted avg']['precision']
-        recall = report['weighted avg']['recall']
-        f1 = report['weighted avg']['f1-score']
-        
+        report = seqeval_classification_report(out_label_list, preds_list)
+        wandb.log({"classification_report": report})
+
+        # Parse the report to extract the precision, recall, and F1 score
+        lines = report.split("\n")
+        overall_metrics = lines[-3].split()  
+        precision = float(overall_metrics[1])
+        recall = float(overall_metrics[2])
+        f1 = float(overall_metrics[3])
+
         # Log the metrics to W&B
         wandb.log({
             "precision": precision,
