@@ -6,7 +6,6 @@ from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForTokenClassification, TrainingArguments, Trainer, DataCollatorForTokenClassification
 import torch
 from seqeval.metrics import classification_report as seqeval_classification_report
-from seqeval.metrics import precision_score, recall_score, f1_score
 import wandb
 from transformers.integrations import WandbCallback
 
@@ -162,7 +161,8 @@ def train():
         trainer.train()
 
         # Evaluate the model
-        metrics = trainer.evaluate()
+        eval_results = trainer.evaluate()
+        wandb.log({"eval_loss": eval_results["eval_loss"]})
 
         # Function to convert predictions to labels
         def align_predictions(predictions, label_ids):
@@ -184,21 +184,19 @@ def train():
         test_predictions = trainer.predict(tokenized_test_dataset)
         preds_list, out_label_list = align_predictions(test_predictions.predictions, test_predictions.label_ids)
         
-        # Calculate additional metrics
-        precision = precision_score(out_label_list, preds_list)
-        recall = recall_score(out_label_list, preds_list)
-        f1 = f1_score(out_label_list, preds_list)
-        report = seqeval_classification_report(out_label_list, preds_list)
+        # Compute the metrics
+        report = seqeval_classification_report(out_label_list, preds_list, output_dict=True)
+        precision = report['weighted avg']['precision']
+        recall = report['weighted avg']['recall']
+        f1 = report['weighted avg']['f1-score']
         
-        # Log metrics to W&B
+        # Log the metrics to W&B
         wandb.log({
-            "classification_report": report,
-            "eval_loss": metrics["eval_loss"],
             "precision": precision,
             "recall": recall,
-            "f1_score": f1,
-            "final_learning_rate": trainer.args.learning_rate,
-            "model_checkpoint": config.model_checkpoint
+            "f1": f1,
+            "final_learning_rate": config.learning_rate,
+            "model_checkpoint": config.model_checkpoint,
         })
 
     except Exception as e:
@@ -232,7 +230,7 @@ sweep_config = {
 }
 
 # Initialize the sweep
-sweep_id = wandb.sweep(sweep_config, project="ner-sweep1")
+sweep_id = wandb.sweep(sweep_config, project="ner-sweep3")
 
 # Run the sweep
 wandb.agent(sweep_id, function=train, count=3)
