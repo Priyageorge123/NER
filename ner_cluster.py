@@ -161,7 +161,7 @@ def train():
         trainer.train()
 
         # Evaluate the model
-        trainer.evaluate()
+        eval_results = trainer.evaluate()
         wandb.log({"eval_loss": eval_results["eval_loss"]})
 
         # Function to convert predictions to labels
