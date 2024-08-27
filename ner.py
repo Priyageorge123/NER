@@ -191,9 +191,9 @@ def train():
         # Parse the report to extract the precision, recall, and F1 score
         lines = report.split("\n")
         overall_metrics = lines[-3].split()  
-        precision = float(overall_metrics[1])
-        recall = float(overall_metrics[2])
-        f1 = float(overall_metrics[3])
+        precision = float(overall_metrics[2])
+        recall = float(overall_metrics[3])
+        f1 = float(overall_metrics[4])
 
         # Log the metrics to W&B
         wandb.log({
@@ -235,7 +235,7 @@ sweep_config = {
 }
 
 # Initialize the sweep
-sweep_id = wandb.sweep(sweep_config, project="ner-sweep4")
+sweep_id = wandb.sweep(sweep_config, project="ner-sweep8")
 
 # Run the sweep
 wandb.agent(sweep_id, function=train, count=6)
