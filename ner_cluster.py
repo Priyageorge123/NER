@@ -217,7 +217,7 @@ sweep_config = {
 }
 
 # Initialize the sweep
-sweep_id = wandb.sweep(sweep_config, project="ner-sweep7")
+sweep_id = wandb.sweep(sweep_config, project="ner-sweep8")
 
 # Run the sweep
-wandb.agent(sweep_id, function=train, count=3)
+wandb.agent(sweep_id, function=train, count=10)
